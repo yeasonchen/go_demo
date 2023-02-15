@@ -1,32 +1,40 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
+	"log"
+	"time"
 )
 
 func main() {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": "9.135.235.93:9092",
-		"group.id":          "myGroup",
-		"auto.offset.reset": "earliest",
-	})
+	// to consume messages
+	topic := "my-topic"
+	partition := 0
 
+	conn, err := kafka.DialLeader(context.Background(), "tcp", "localhost:9092", topic, partition)
 	if err != nil {
-		panic(err)
+		log.Fatal("failed to dial leader:", err)
 	}
 
-	_ = c.SubscribeTopics([]string{"myTopic", "^aRegex.*[Tt]opic"}, nil)
+	conn.SetReadDeadline(time.Now().Add(10 * time.Second))
+	batch := conn.ReadBatch(10e3, 1e6) // fetch 10KB min, 1MB max
 
+	b := make([]byte, 10e3) // 10KB max per message
 	for {
-		msg, err := c.ReadMessage(-1)
-		if err == nil {
-			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
-		} else {
-			// The client will automatically try to recover from all errors.
-			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+		n, err := batch.Read(b)
+		if err != nil {
+			break
 		}
+		fmt.Println(string(b[:n]))
 	}
 
-	c.Close()
+	if err := batch.Close(); err != nil {
+		log.Fatal("failed to close batch:", err)
+	}
+
+	if err := conn.Close(); err != nil {
+		log.Fatal("failed to close connection:", err)
+	}
 }

@@ -1,9 +1,8 @@
 package main
 
-import "fmt"
+import "github.com/YeasonChen/go_demo/language/leetcode_sync"
 
 func main() {
-	//var name [5]int
-	//age := [3]int{10}
-	fmt.Println("kankan")
+	//leetcode_sync.OrderExample()
+	leetcode_sync.H2OExample()
 }
