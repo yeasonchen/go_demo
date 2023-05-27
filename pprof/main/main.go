@@ -61,7 +61,7 @@ import (
 var hello []int
 
 func counter(wg *sync.WaitGroup) {
-	defer wg.Done()Ω
+	defer wg.Done()
 
 	slice := []int{0}
 	c := 1
@@ -92,4 +92,3 @@ func main() {
 	}
 	wg.Wait()
 }
-
